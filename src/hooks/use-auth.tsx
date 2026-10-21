@@ -1,56 +1,53 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Role = "admin" | "customer" | "artisan";
 
+export const authUserQueryKey = ["auth-user"] as const;
+export const authRolesQueryKey = (userId: string) => ["auth-roles", userId] as const;
+
+export async function loadAuthRoles(userId: string): Promise<Role[]> {
+  const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  if (error) throw error;
+  return (data ?? []).map((row) => row.role as Role);
+}
+
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const userQuery = useQuery<User | null>({
+    queryKey: authUserQueryKey,
+    queryFn: async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) throw error;
+      return data.session?.user ?? null;
+    },
+    staleTime: Infinity,
+    retry: false,
+  });
+  const rolesQuery = useQuery({
+    queryKey: authRolesQueryKey(userQuery.data?.id ?? ""),
+    queryFn: () => loadAuthRoles(userQuery.data!.id),
+    enabled: !!userQuery.data,
+    staleTime: Infinity,
+    retry: false,
+  });
+
+  const user = userQuery.data ?? null;
+  const roles = rolesQuery.data ?? [];
+  const error = userQuery.error ?? rolesQuery.error;
 
   useEffect(() => {
-    let active = true;
-    const load = async () => {
-      let resolvedUser: User | null = null;
-      try {
-        const { data, error: authError } = await supabase.auth.getUser();
-        if (authError && authError.name !== "AuthSessionMissingError") throw authError;
-        if (!active) return;
-        resolvedUser = data.user;
-        setUser(resolvedUser);
-        if (resolvedUser) {
-          const { data: roleRows, error: rolesError } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", resolvedUser.id);
-          if (rolesError) throw rolesError;
-          if (active) setRoles((roleRows ?? []).map((row) => row.role as Role));
-        } else {
-          setRoles([]);
-        }
-        if (active) setError(null);
-      } catch (cause) {
-        if (active) {
-          console.error("Could not load the current account", cause);
-          setUser(resolvedUser);
-          setRoles([]);
-          setError(cause instanceof Error ? cause.message : "Could not load the current account");
-        }
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
-    load();
-    const { data: sub } = supabase.auth.onAuthStateChange((e) => {
-      if (e === "SIGNED_IN" || e === "SIGNED_OUT" || e === "USER_UPDATED") load();
-    });
-    return () => {
-      active = false;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
+    if (error) console.error("Could not load the current account", error);
+  }, [error]);
 
-  return { user, roles, loading, error, isAdmin: roles.includes("admin"), isArtisan: roles.includes("artisan") };
+  return {
+    user,
+    roles,
+    loading: userQuery.isLoading || (!!user && rolesQuery.isLoading),
+    error:
+      error instanceof Error ? error.message : error ? "Could not load the current account" : null,
+    isAdmin: roles.includes("admin"),
+    isArtisan: roles.includes("artisan"),
+  };
 }

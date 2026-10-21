@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff, KeyRound } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CATEGORIES } from "@/lib/pricing";
 import { AppHeader } from "@/components/AppHeader";
+import { authRolesQueryKey, loadAuthRoles } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -23,6 +25,7 @@ const input =
 
 function AuthPage() {
   const nav = useNavigate();
+  const queryClient = useQueryClient();
   const [mode, setMode] = useState<"in" | "up" | "forgot" | "checking" | "reset" | "blocked">("in");
   const [role, setRole] = useState<"customer" | "artisan">("customer");
   const [f, setF] = useState({
@@ -150,28 +153,36 @@ function AuthPage() {
         setBusy(false);
       }
     } else if (mode === "in") {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: f.email,
-        password: f.password,
-      });
-      setBusy(false);
-      if (error) {
-        toast.error(error.message);
-        return;
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: f.email,
+          password: f.password,
+        });
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        if (!data.user) {
+          toast.error("Sign-in succeeded, but the account could not be loaded.");
+          return;
+        }
+        const roles = await queryClient.fetchQuery({
+          queryKey: authRolesQueryKey(data.user.id),
+          queryFn: () => loadAuthRoles(data.user.id),
+          staleTime: Infinity,
+        });
+        nav({
+          to: roles.includes("admin")
+            ? "/admin"
+            : roles.includes("artisan")
+              ? "/artisan"
+              : "/dashboard",
+        });
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Sign-in could not be completed.");
+      } finally {
+        setBusy(false);
       }
-      const { data: u } = await supabase.auth.getUser();
-      const { data: r } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", u.user!.id);
-      const roles = (r ?? []).map((x) => x.role);
-      nav({
-        to: roles.includes("admin")
-          ? "/admin"
-          : roles.includes("artisan")
-            ? "/artisan"
-            : "/dashboard",
-      });
     } else {
       const { error } = await supabase.auth.signUp({
         email: f.email,

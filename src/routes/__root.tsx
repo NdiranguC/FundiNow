@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { VisitTracker } from "@/components/VisitTracker";
 import { supabase } from "@/integrations/supabase/client";
+import { authUserQueryKey } from "@/hooks/use-auth";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -79,7 +80,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      
     ],
     links: [
       {
@@ -87,7 +87,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap",
+      },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
     ],
   }),
@@ -118,16 +121,24 @@ function RootComponent() {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       if (event === "SIGNED_IN" && session?.user) {
-        void supabase.from("analytics_events").insert({
-          event_type: "login",
-          actor_id: session.user.id,
-          entity_id: session.user.id,
-        }).then(({ error }) => {
-          if (error) console.error("Could not record login analytics", error);
+        void supabase
+          .from("analytics_events")
+          .insert({
+            event_type: "login",
+            actor_id: session.user.id,
+            entity_id: session.user.id,
+          })
+          .then(({ error }) => {
+            if (error) console.error("Could not record login analytics", error);
+          });
+      }
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        queryClient.removeQueries({
+          predicate: (query) => query.queryKey[0] !== authUserQueryKey[0],
         });
       }
-      router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      queryClient.setQueryData(authUserQueryKey, session?.user ?? null);
+      if (event === "SIGNED_OUT") void router.invalidate();
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);

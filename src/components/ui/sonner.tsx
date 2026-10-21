@@ -1,11 +1,19 @@
 import { Toaster as Sonner } from "sonner";
+import type { ComponentProps, CSSProperties } from "react";
 
-type ToasterProps = React.ComponentProps<typeof Sonner>;
+type ToasterProps = ComponentProps<typeof Sonner>;
 
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       className="toaster group"
+      position="top-center"
+      style={
+        {
+          "--width": "min(calc(100vw - 2rem), 356px)",
+          "--offset-top": "max(16px, env(safe-area-inset-top))",
+        } as CSSProperties
+      }
       toastOptions={{
         classNames: {
           toast:
