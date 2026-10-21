@@ -16,6 +16,9 @@ dist-ssr
 .nitro
 *.local
 
+# Vercel build output
+.vercel/
+
 # Local credentials and Supabase-generated files
 .env
 .env.*

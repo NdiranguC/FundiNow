@@ -76,6 +76,41 @@ Admin creation is restricted by database triggers and a unique constraint;
 the browser cannot grant admin privileges. Use the admin dashboard to review
 and verify fundi profiles.
 
+## Deploy to Vercel
+
+FundiNow uses TanStack Start server rendering and server functions. Deploy it as
+a server application, not as a static Vite site. The Vite config includes the
+Nitro adapter required for Vercel deployment.
+
+1. Create a hosted Supabase project and apply the migrations as described
+   above. Do not use the local Supabase URL for a production deployment.
+2. Push the project to a Git provider supported by Vercel, then import the
+   repository into Vercel. Use the repository root as the project root,
+   `npm run build` as the build command, and leave the output directory
+   unset so Nitro can configure the server output.
+3. In Vercel Project Settings → Environment Variables, add the following for
+   Production and any Preview environments you will use:
+
+   - `VITE_SUPABASE_URL`: hosted Supabase project URL
+   - `SUPABASE_URL`: the same hosted Supabase project URL
+   - `VITE_SUPABASE_PUBLISHABLE_KEY`: Supabase publishable key
+   - `SUPABASE_PUBLISHABLE_KEY`: the same publishable key
+
+   The app uses Supabase row-level security and does not need a service-role
+   key. Never expose a service-role key as a `VITE_` variable.
+4. To enable maps and address search, optionally add
+   `VITE_GOOGLE_MAPS_API_KEY` (restricted to your deployed site referrers and
+   required Maps APIs) and `GOOGLE_MAPS_API_KEY` (server-only, restricted to
+   Places and Geocoding). These features remain unavailable without the
+   respective keys.
+5. Deploy, then set the production app URL as Supabase Auth's Site URL. Add
+   the deployed app origin and its `/auth?flow=recovery` URL to the Auth
+   redirect URL allowlist. Configure OAuth providers and SMTP if you use
+   Google sign-in or password recovery emails.
+6. Redeploy after changing Vercel environment variables. Verify registration,
+   sign-in, password recovery, protected pages, job updates, and maps if
+   configured.
+
 ## Database changes
 
 Supabase migrations live in `supabase/migrations/`. For a local reset:
