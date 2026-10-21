@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { NotificationsMenu } from "@/components/NotificationsMenu";
 import logo from "@/assets/logo.png";
-import { armLogoutBackExit } from "@/lib/logout-history";
 
 export function AppHeader() {
   const { user, isAdmin, isArtisan, error } = useAuth();
@@ -80,8 +79,7 @@ export function AppHeader() {
                   toast.error(error.message);
                   return;
                 }
-                armLogoutBackExit();
-                await navigate({ to: "/", replace: true });
+                await navigate({ to: "/auth", replace: true });
               }}
             >
               Sign out
