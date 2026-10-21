@@ -1,0 +1,25 @@
+# Roadmap
+- [x] Grant requested admin account access (charlesmutuan@gmail.com)
+- [x] Editable customer and fundi photo, name, phone, and jobs
+- [x] Replace sample testimonials with real customer reviews
+- [ ] Completion emails to both registered addresses — email code ready to scaffold once the owner sets up an owned sender domain
+- [x] Landing page
+- [x] Sign in / sign up (customer & fundi), Google
+- [x] Job requests with photos, instant/scheduled, price estimate
+- [x] Matching nearest online fundis, auto-assign
+- [x] Live map tracking, chat, call
+- [x] Fundi dashboard: online toggle, accept/decline, earnings, verification uploads, portfolio
+- [x] Admin: users, fundi verification, jobs, disputes, commission, analytics
+- [x] In-app notifications for job requests and lifecycle updates
+- [x] Customer rescheduling and admin handling for stalled jobs
+- [x] Ignore stale fundi availability and notify matching fundis when they come online
+- [x] Structured service-quality and safety reports for admin review
+- [x] Signup, login, request, acceptance, completion, and payment funnel analytics
+- [x] Retryable feedback for chat and job media; mobile-friendly request upload limits
+- [x] Customer-approved itemized fundi quotes with versioned scope changes and KES totals
+- [x] Private job progress/evidence log and customer handover confirmation
+- [x] Customer snag reporting and assigned-fundi resolution follow-up
+- [x] Downloadable PDF summary of approved job scope, parties, and quote
+- [x] Offline status and retryable in-page agreement/evidence drafts
+- [x] Fundi trust signals: verification, customer ratings, and completed-job counts
+- [ ] Real M-Pesa STK push — blocked on M-Pesa Daraja business keys from the owner

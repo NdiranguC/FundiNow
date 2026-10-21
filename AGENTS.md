@@ -1,0 +1,2 @@
+- Signed-in pages live under src/routes/_authenticated/ and query the backend from the browser with RLS; role-sensitive writes (accepting jobs, ratings, verification) are enforced in database functions/triggers, so never move those checks to the UI only.
+- Pricing, surge and matching rules live in src/lib/pricing.ts with tests beside it — change rules there, not in pages.
