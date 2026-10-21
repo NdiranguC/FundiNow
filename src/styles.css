@@ -152,3 +152,18 @@
     color: var(--color-foreground);
   }
 }
+
+@media (max-width: 600px) {
+  [data-sonner-toaster][data-x-position="center"] {
+    left: 0;
+    right: 0;
+    width: 100%;
+  }
+
+  [data-sonner-toaster][data-x-position="center"] [data-sonner-toast] {
+    left: 0;
+    right: 0;
+    width: min(var(--width), calc(100vw - 2rem));
+    margin-inline: auto;
+  }
+}
