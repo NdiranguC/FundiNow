@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getSession();
     if (error) throw error;
-    if (!data.session?.user) throw redirect({ to: "/auth" });
+    if (!data.session?.user) throw redirect({ to: "/auth", replace: true });
   },
   component: () => (
     <div className="min-h-screen bg-muted font-sans">

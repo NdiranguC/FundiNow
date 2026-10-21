@@ -14,6 +14,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { VisitTracker } from "@/components/VisitTracker";
 import { supabase } from "@/integrations/supabase/client";
 import { authUserQueryKey } from "@/hooks/use-auth";
+import { cancelLogoutBackExit, installLogoutBackExit } from "@/lib/logout-history";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -118,8 +119,10 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   useEffect(() => {
+    const uninstallLogoutBackExit = installLogoutBackExit();
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      if (event === "SIGNED_IN") cancelLogoutBackExit();
       if (event === "SIGNED_IN" && session?.user) {
         void supabase
           .from("analytics_events")
@@ -132,7 +135,9 @@ function RootComponent() {
             if (error) console.error("Could not record login analytics", error);
           });
       }
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+      if (event === "SIGNED_OUT") {
+        queryClient.clear();
+      } else if (event === "SIGNED_IN") {
         queryClient.removeQueries({
           predicate: (query) => query.queryKey[0] !== authUserQueryKey[0],
         });
@@ -140,7 +145,10 @@ function RootComponent() {
       queryClient.setQueryData(authUserQueryKey, session?.user ?? null);
       if (event === "SIGNED_OUT") void router.invalidate();
     });
-    return () => data.subscription.unsubscribe();
+    return () => {
+      data.subscription.unsubscribe();
+      uninstallLogoutBackExit();
+    };
   }, [router, queryClient]);
 
   return (
