@@ -177,6 +177,7 @@ function AuthPage() {
             : roles.includes("artisan")
               ? "/artisan"
               : "/dashboard",
+          replace: true,
         });
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Sign-in could not be completed.");
