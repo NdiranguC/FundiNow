@@ -5,6 +5,8 @@ ALTER TABLE public.artisans
   ADD COLUMN verification_submitted_at timestamptz,
   ADD COLUMN verification_review_reason text;
 
+DROP TRIGGER IF EXISTS artisans_protect ON public.artisans;
+
 UPDATE public.artisans
 SET verification_status = CASE WHEN verified THEN 'verified' ELSE 'pending' END;
 
@@ -27,21 +29,6 @@ BEGIN
     IF NOT NEW.verified THEN
       NEW.is_online := false;
     END IF;
-    RETURN NEW;
-  END IF;
-
-  IF TG_OP = 'INSERT' THEN
-    IF NEW.user_id IS DISTINCT FROM auth.uid() THEN
-      RAISE EXCEPTION 'You can only create your own fundi profile';
-    END IF;
-    NEW.verified := false;
-    NEW.id_doc_path := NULL;
-    NEW.verification_status := 'pending';
-    NEW.verified_at := NULL;
-    NEW.verification_submitted_at := NULL;
-    NEW.verification_review_reason := NULL;
-    NEW.rating := 5;
-    NEW.rating_count := 0;
     RETURN NEW;
   END IF;
 
@@ -68,7 +55,7 @@ $$;
 
 DROP TRIGGER IF EXISTS artisans_protect ON public.artisans;
 CREATE TRIGGER artisans_protect
-BEFORE INSERT OR UPDATE ON public.artisans
+BEFORE UPDATE ON public.artisans
 FOR EACH ROW EXECUTE FUNCTION public.protect_artisan_fields();
 
 CREATE OR REPLACE FUNCTION public.protect_verified_artisan_name()
