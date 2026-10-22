@@ -147,10 +147,7 @@ function ArtisanPage() {
       goOnline();
     }
   };
-  const upload = async (
-    kind: "id_doc_path" | "cert_path" | "portfolio",
-    files: FileList | null,
-  ) => {
+  const upload = async (kind: "cert_path" | "portfolio", files: FileList | null) => {
     if (!files?.length) return undefined;
     const bucket = kind === "portfolio" ? "job-media" : "artisan-docs";
     const paths: string[] = [];
@@ -163,9 +160,13 @@ function ArtisanPage() {
       }
       paths.push(path);
     }
+    const firstPath = paths[0];
+    if (!firstPath) return undefined;
     if (
       await patch(
-        kind === "portfolio" ? { portfolio: [...me.portfolio, ...paths] } : { [kind]: paths[0] },
+        kind === "portfolio"
+          ? { portfolio: [...me.portfolio, ...paths] }
+          : { cert_path: firstPath },
       )
     ) {
       toast.success("Uploaded");
@@ -176,6 +177,33 @@ function ArtisanPage() {
     const { error } = await supabase.rpc("respond_job", { _job: jobId, _accept: accept });
     if (error) toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["artisan-jobs"] });
+  };
+  const verifyId = async (file: File | undefined) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.set("file", file);
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!sessionData.session) throw new Error("Sign in again to verify your ID");
+      const response = await fetch("/api/verify-fundi-id", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
+        body: formData,
+      });
+      const result = (await response.json()) as {
+        status?: string;
+        message?: string;
+        error?: string;
+      };
+      if (!response.ok) throw new Error(result.error ?? "ID verification could not be completed");
+      toast.success(result.message ?? "Your ID was received for verification");
+      await qc.invalidateQueries({ queryKey: ["me-artisan", user!.id] });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "ID verification could not be completed",
+      );
+    }
   };
 
   const pct = settings?.commission_pct ?? 15;
@@ -198,7 +226,11 @@ function ArtisanPage() {
               </span>
             ) : (
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                Pending verification
+                {me.verification_status === "pending_review"
+                  ? "Under manual review"
+                  : me.verification_status === "failed"
+                    ? "Verification unsuccessful"
+                    : "Pending verification"}
               </span>
             )}
           </h1>
@@ -323,26 +355,50 @@ function ArtisanPage() {
               Save
             </button>
           </div>
-          {(
-            [
-              ["id_doc_path", "National ID", me.id_doc_path],
-              ["cert_path", "Skill certificate (optional)", me.cert_path],
-            ] as const
-          ).map(([k, l, v]) => (
-            <label
-              key={k}
-              className="cursor-pointer rounded-xl border border-dashed border-border p-4 text-sm"
-            >
-              <span className="font-bold">{l}</span>{" "}
-              <span className="text-muted-foreground">{v ? "✓ uploaded" : "— tap to upload"}</span>
-              <input
-                type="file"
-                accept="image/*,application/pdf"
-                className="hidden"
-                onChange={(e) => upload(k, e.target.files)}
-              />
-            </label>
-          ))}
+          {([["cert_path", "Skill certificate (optional)", me.cert_path]] as const).map(
+            ([k, l, v]) => (
+              <label
+                key={k}
+                className="cursor-pointer rounded-xl border border-dashed border-border p-4 text-sm"
+              >
+                <span className="font-bold">{l}</span>{" "}
+                <span className="text-muted-foreground">
+                  {v ? "✓ uploaded" : "— tap to upload"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  onChange={(e) => upload(k, e.target.files)}
+                />
+              </label>
+            ),
+          )}
+          <label className="cursor-pointer rounded-xl border border-dashed border-border p-4 text-sm">
+            <span className="font-bold">National ID (front side)</span>{" "}
+            <span className="text-muted-foreground">
+              {me.id_doc_path
+                ? me.verification_status === "pending_review"
+                  ? "Under manual review — tap to upload again"
+                  : me.verified
+                    ? "Verified — tap to submit a new image"
+                    : "Submitted — tap to upload again"
+                : "Upload a JPEG, PNG, or WebP image"}
+            </span>
+            <span className="mt-1 block text-xs text-muted-foreground">
+              Google Cloud Vision reads the printed name. Images that cannot be confidently matched
+              are sent for manual review.
+            </span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                void verifyId(e.target.files?.[0]);
+                e.currentTarget.value = "";
+              }}
+            />
+          </label>
           <label className="cursor-pointer rounded-xl border border-dashed border-border p-4 text-sm sm:col-span-2">
             <span className="font-bold">Portfolio photos</span>{" "}
             <span className="text-muted-foreground">

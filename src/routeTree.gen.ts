@@ -16,6 +16,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedArtisanRouteImport } from './routes/_authenticated/artisan'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated/request'
+import { Route as ApiVerifyFundiIdRouteImport } from './routes/api.verify-fundi-id'
 import { Route as AuthenticatedJobsIdRouteImport } from './routes/_authenticated/jobs.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -52,6 +53,11 @@ const AuthenticatedRequestRoute = AuthenticatedRequestRouteImport.update({
   path: '/request',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiVerifyFundiIdRoute = ApiVerifyFundiIdRouteImport.update({
+  id: '/api/verify-fundi-id',
+  path: '/api/verify-fundi-id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedJobsIdRoute = AuthenticatedJobsIdRouteImport.update({
   id: '/jobs/$id',
   path: '/jobs/$id',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/artisan': typeof AuthenticatedArtisanRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/request': typeof AuthenticatedRequestRoute
+  '/api/verify-fundi-id': typeof ApiVerifyFundiIdRoute
   '/jobs/$id': typeof AuthenticatedJobsIdRoute
 }
 export interface FileRoutesByTo {
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/artisan': typeof AuthenticatedArtisanRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/request': typeof AuthenticatedRequestRoute
+  '/api/verify-fundi-id': typeof ApiVerifyFundiIdRoute
   '/jobs/$id': typeof AuthenticatedJobsIdRoute
 }
 export interface FileRoutesById {
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/_authenticated/artisan': typeof AuthenticatedArtisanRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
+  '/api/verify-fundi-id': typeof ApiVerifyFundiIdRoute
   '/_authenticated/jobs/$id': typeof AuthenticatedJobsIdRoute
 }
 export interface FileRouteTypes {
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/artisan'
     | '/dashboard'
     | '/request'
+    | '/api/verify-fundi-id'
     | '/jobs/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
     | '/artisan'
     | '/dashboard'
     | '/request'
+    | '/api/verify-fundi-id'
     | '/jobs/$id'
   id:
     | '__root__'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '/_authenticated/artisan'
     | '/_authenticated/dashboard'
     | '/_authenticated/request'
+    | '/api/verify-fundi-id'
     | '/_authenticated/jobs/$id'
   fileRoutesById: FileRoutesById
 }
@@ -122,6 +134,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiVerifyFundiIdRoute: typeof ApiVerifyFundiIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -175,6 +188,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRequestRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/verify-fundi-id': {
+      id: '/api/verify-fundi-id'
+      path: '/api/verify-fundi-id'
+      fullPath: '/api/verify-fundi-id'
+      preLoaderRoute: typeof ApiVerifyFundiIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/jobs/$id': {
       id: '/_authenticated/jobs/$id'
       path: '/jobs/$id'
@@ -208,6 +228,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiVerifyFundiIdRoute: ApiVerifyFundiIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

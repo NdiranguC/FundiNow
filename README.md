@@ -20,6 +20,10 @@ Requirements: Node.js with npm, Docker Desktop, and the Supabase CLI.
 3. Copy the local API URL and publishable key from `supabase status` into
    `VITE_SUPABASE_URL`, `SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, and
    `SUPABASE_PUBLISHABLE_KEY` in `.env`.
+   Configure `SUPABASE_SERVICE_ROLE_KEY` with the local service-role key and
+   `GOOGLE_CLOUD_VISION_API_KEY` with a Google Cloud Vision API key to enable
+   automated fundi ID checks. Keep both values server-only; never use a `VITE_`
+   prefix.
 4. Install dependencies and start FundiNow:
 
    ```sh
@@ -46,8 +50,10 @@ policy blocks the `.ps1` command shims.
 ## Fresh hosted Supabase project
 
 1. Create a new Supabase project.
-2. Set the project URL and publishable key in the app's environment. The app
-   uses row-level security and does not require a service-role key.
+2. Set the project URL and publishable key in the app's environment. Add
+   `SUPABASE_SERVICE_ROLE_KEY` and `GOOGLE_CLOUD_VISION_API_KEY` as server-only
+   environment variables to enable fundi ID verification. Never expose either
+   value as a `VITE_` variable.
 3. Link the CLI and apply the checked-in migrations:
 
    ```sh
@@ -95,9 +101,13 @@ Nitro adapter required for Vercel deployment.
    - `SUPABASE_URL`: the same hosted Supabase project URL
    - `VITE_SUPABASE_PUBLISHABLE_KEY`: Supabase publishable key
    - `SUPABASE_PUBLISHABLE_KEY`: the same publishable key
+   - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service-role key, server-only
+   - `GOOGLE_CLOUD_VISION_API_KEY`: API key with access to Cloud Vision, server-only
 
-   The app uses Supabase row-level security and does not need a service-role
-   key. Never expose a service-role key as a `VITE_` variable.
+   The browser uses the publishable key and row-level security. The ID
+   verification endpoint uses the server-only service-role key to update
+   verification fields and private ID storage. Never expose that key as a
+   `VITE_` variable.
 4. To enable maps and address search, optionally add
    `VITE_GOOGLE_MAPS_API_KEY` (restricted to your deployed site referrers and
    required Maps APIs) and `GOOGLE_MAPS_API_KEY` (server-only, restricted to

@@ -24,6 +24,10 @@ export type Database = {
           rating_count: number;
           user_id: string;
           verified: boolean;
+          verification_review_reason: string | null;
+          verification_status: "pending" | "verified" | "failed" | "pending_review";
+          verification_submitted_at: string | null;
+          verified_at: string | null;
         };
         Insert: {
           bio?: string;
@@ -40,6 +44,10 @@ export type Database = {
           rating_count?: number;
           user_id: string;
           verified?: boolean;
+          verification_review_reason?: string | null;
+          verification_status?: "pending" | "verified" | "failed" | "pending_review";
+          verification_submitted_at?: string | null;
+          verified_at?: string | null;
         };
         Update: {
           bio?: string;
@@ -56,6 +64,10 @@ export type Database = {
           rating_count?: number;
           user_id?: string;
           verified?: boolean;
+          verification_review_reason?: string | null;
+          verification_status?: "pending" | "verified" | "failed" | "pending_review";
+          verification_submitted_at?: string | null;
+          verified_at?: string | null;
         };
         Relationships: [];
       };
