@@ -8,23 +8,10 @@ export const CATEGORIES = [
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
-/** Base call-out price in KES per category. */
-export const BASE_PRICE: Record<Category, number> = {
-  Electrical: 1500,
-  Plumbing: 1500,
-  Carpentry: 2000,
-  Masonry: 2500,
-  Painting: 2000,
-  "General labour": 1000,
-};
+export const MIN_JOB_PRICE = 1500;
 
-/** Instant (urgent) jobs carry surge pricing. */
-export const SURGE_MULTIPLIER = 1.25;
-
-export function estimatePrice(category: Category, urgency: "instant" | "scheduled") {
-  const base = BASE_PRICE[category] ?? 1000;
-  const price = urgency === "instant" ? base * SURGE_MULTIPLIER : base;
-  return Math.round(price / 50) * 50;
+export function isValidCustomerJobPrice(price: number) {
+  return Number.isSafeInteger(price) && price >= MIN_JOB_PRICE && price <= 2_147_483_647;
 }
 
 export function artisanEarnings(price: number, commissionPct: number) {

@@ -5,7 +5,14 @@ import { toast } from "sonner";
 import { Crosshair, ShieldCheck, Star, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { CATEGORIES, estimatePrice, formatKES, matchArtisans, type Category } from "@/lib/pricing";
+import {
+  CATEGORIES,
+  formatKES,
+  isValidCustomerJobPrice,
+  matchArtisans,
+  MIN_JOB_PRICE,
+  type Category,
+} from "@/lib/pricing";
 import { LocationSearch } from "@/components/LocationSearch";
 import { GoogleMap } from "@/components/GoogleMap";
 import { reverseGeocode } from "@/lib/places.functions";
@@ -36,13 +43,15 @@ function RequestPage() {
       : "Electrical",
   );
   const [description, setDescription] = useState("");
+  const [priceInput, setPriceInput] = useState(String(MIN_JOB_PRICE));
   const [files, setFiles] = useState<File[]>([]);
   const [urgency, setUrgency] = useState<"instant" | "scheduled">("instant");
   const [when, setWhen] = useState("");
   const [address, setAddress] = useState(search.address ?? "");
   const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
   const [busy, setBusy] = useState(false);
-  const price = estimatePrice(category, urgency);
+  const price = Number(priceInput);
+  const validPrice = isValidCustomerJobPrice(price);
 
   const { data: artisans = [], error: artisansError } = useQuery({
     queryKey: ["artisans-online", category],
@@ -99,6 +108,10 @@ function RequestPage() {
 
   async function submit(artisanId: string | null) {
     if (!user) return undefined;
+    if (!validPrice) {
+      toast.error(`Enter a whole-number offer of at least ${formatKES(MIN_JOB_PRICE)}.`);
+      return undefined;
+    }
     setBusy(true);
     const photos: string[] = [];
     try {
@@ -262,7 +275,7 @@ function RequestPage() {
                 >
                   <p className="font-bold">{u === "instant" ? "Now" : "Schedule"}</p>
                   <p className="text-xs text-muted-foreground">
-                    {u === "instant" ? "Urgent, +25% surge" : "Pick a time"}
+                    {u === "instant" ? "Request service now" : "Pick a time"}
                   </p>
                 </button>
               ))}
@@ -275,9 +288,25 @@ function RequestPage() {
                 onChange={(e) => setWhen(e.target.value)}
               />
             )}
-            <div className="mt-5 flex items-center justify-between rounded-xl bg-muted p-4">
-              <span className="text-sm text-muted-foreground">Estimated price</span>
-              <span className="text-xl font-extrabold">{formatKES(price)}</span>
+            <div className="mt-5 rounded-xl bg-muted p-4">
+              <label htmlFor="job-price" className="text-sm font-bold">
+                Your offer (KES)
+              </label>
+              <input
+                id="job-price"
+                type="number"
+                min={MIN_JOB_PRICE}
+                max={2_147_483_647}
+                step={1}
+                required
+                className={`${input} mt-2`}
+                value={priceInput}
+                onChange={(event) => setPriceInput(event.target.value)}
+                aria-describedby="job-price-hint"
+              />
+              <p id="job-price-hint" className="mt-2 text-xs text-muted-foreground">
+                Set the amount you’re offering. Minimum {formatKES(MIN_JOB_PRICE)}.
+              </p>
             </div>
             <div className="mt-5 flex gap-2">
               <button
@@ -287,7 +316,7 @@ function RequestPage() {
                 Back
               </button>
               <button
-                disabled={!address || (urgency === "scheduled" && !when)}
+                disabled={!address || (urgency === "scheduled" && !when) || !validPrice}
                 onClick={() => setStep(3)}
                 className="flex-1 rounded-xl bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50"
               >
@@ -313,9 +342,9 @@ function RequestPage() {
               </p>
             )}
             <button
-              disabled={busy}
-              onClick={() => submit(null)}
+              onClick={() => void submit(null)}
               className="mt-5 w-full rounded-xl bg-primary py-3 font-bold text-primary-foreground shadow-glow disabled:opacity-50"
+              disabled={busy || !validPrice}
             >
               Send to verified fundis online · {formatKES(price)}
             </button>
@@ -337,7 +366,7 @@ function RequestPage() {
                   </div>
                   <button
                     disabled={busy}
-                    onClick={() => submit(a.user_id)}
+                    onClick={() => void submit(a.user_id)}
                     className="rounded-full bg-secondary px-4 py-2 text-sm font-bold text-secondary-foreground"
                   >
                     Request

@@ -1,10 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { estimatePrice, artisanEarnings, matchArtisans } from "./pricing";
+import { artisanEarnings, isValidCustomerJobPrice, matchArtisans, MIN_JOB_PRICE } from "./pricing";
 
 describe("pricing", () => {
-  it("instant jobs get 25% surge", () => {
-    expect(estimatePrice("Plumbing", "scheduled")).toBe(1500);
-    expect(estimatePrice("Plumbing", "instant")).toBe(1900);
+  it("requires customer-set job prices to meet the KES 1,500 minimum", () => {
+    expect(MIN_JOB_PRICE).toBe(1500);
+    expect(isValidCustomerJobPrice(1500)).toBe(true);
+    expect(isValidCustomerJobPrice(2750)).toBe(true);
+    expect(isValidCustomerJobPrice(1499)).toBe(false);
+    expect(isValidCustomerJobPrice(1500.5)).toBe(false);
+    expect(isValidCustomerJobPrice(Number.MAX_SAFE_INTEGER)).toBe(false);
   });
   it("artisan earns price minus commission", () => {
     expect(artisanEarnings(2000, 15)).toBe(1700);
